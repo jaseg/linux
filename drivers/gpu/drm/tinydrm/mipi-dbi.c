@@ -10,6 +10,7 @@
 #include <linux/dma-buf.h>
 #include <linux/gpio/consumer.h>
 #include <linux/module.h>
+#include <linux/delay.h>
 #include <linux/regulator/consumer.h>
 #include <linux/spi/spi.h>
 
@@ -499,9 +500,9 @@ void mipi_dbi_hw_reset(struct mipi_dbi *mipi)
 		return;
 
 	gpiod_set_value_cansleep(mipi->reset, 0);
-	usleep_range(20, 1000);
+	msleep(10);
 	gpiod_set_value_cansleep(mipi->reset, 1);
-	msleep(120);
+	msleep(200);
 }
 EXPORT_SYMBOL(mipi_dbi_hw_reset);
 
@@ -943,7 +944,16 @@ static int mipi_dbi_typec3_command(struct mipi_dbi *mipi, u8 *cmd,
 	gpiod_set_value_cansleep(mipi->dc, 1);
 	speed_hz = mipi_dbi_spi_cmd_max_speed(spi, num);
 
-	return tinydrm_spi_transfer(spi, speed_hz, NULL, bpw, par, num);
+	udelay(10);
+
+	int i = 0;
+	for (i=0; i<num;i++) {
+		ret |= tinydrm_spi_transfer(spi, speed_hz, NULL, bpw, &par[i], 1);
+		udelay(1);
+	}
+
+	udelay(10);
+	return ret;
 }
 
 /**

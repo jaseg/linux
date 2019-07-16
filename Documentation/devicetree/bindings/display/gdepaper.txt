@@ -18,7 +18,7 @@ Example:
 
 		spi-max-frequency = <8000000>;
 
-		dc-gpios = <&gpio 25 0>;
-		reset-gpios = <&gpio 17 0>;
+		dc-gpios = <&gpio 25 1>;
+		reset-gpios = <&gpio 17 1>;
 		busy-gpios = <&gpio 24 0>;
 	};
