@@ -35,26 +35,9 @@
 #include <drm/tinydrm/mipi-dbi.h>
 #include <drm/tinydrm/tinydrm-helpers.h>
 
-enum gdepaper_controller_res {
-	GDEP_CTRL_RES_320X300 = 0,
-	GDEP_CTRL_RES_300X200 = 1,
-	GDEP_CTRL_RES_296X160 = 2,
-	GDEP_CTRL_RES_296X128 = 3,
-};
+#include <dt-bindings/display/gdepaper.h>
 
-enum gdepaper_color_type {
-	GDEPAPER_COLORS_BLACK_WHITE = 0,
-	GDEPAPER_COLORS_BLACK_WHITE_RED,
-	GDEPAPER_COLORS_BLACK_WHITE_YELLOW,
-	GDEPAPER_COLORS_END
-};
 
-enum gdepaper_vghl_lv {
-	GDEP_PWR_VGHL_16V = 0,
-	GDEP_PWR_VGHL_15V = 1,
-	GDEP_PWR_VGHL_14V = 2,
-	GDEP_PWR_VGHL_13V = 3,
-};
 
 enum gdepaper_cmd {
 	GDEP_CMD_PANEL_SETUP = 0x00,
@@ -116,6 +99,7 @@ enum gdepaper_col_ch {
 	GDEP_CH_RED_YELLOW = 0x4,
 };
 
+
 struct gdepaper_luts {
 	u8 lut_vcom_dc[44];
 	u8 lut_ww[42];
@@ -150,6 +134,7 @@ struct gdepaper {
 	u32 data_polarity; /* "ddx" */
 	bool is_powered_on;
 };
+
 
 static int gdepaper_spi_transfer_cstoggle(struct gdepaper *epap, u8 *data,
 					  size_t len)
@@ -599,7 +584,7 @@ static void gdepaper_pipe_enable(struct drm_simple_display_pipe *pipe,
 	param = epap->controller_res<<6;
 	if (epap->luts)
 		param |= GDEP_PSR_REG_LUT;
-	if (epap->display_colors == GDEPAPER_COLORS_BLACK_WHITE)
+	if (epap->display_colors == GDEPAPER_COL_BW)
 		param |= GDEP_PSR_COLOR_BW;
 
 	if (!epap->mirror_x)
@@ -862,7 +847,7 @@ errout:
 	return ERR_PTR(ret);
 }
 
-static const struct drm_simple_display_pipe_funcs gdepaper_pipe_funcs = { /* TODO */
+static const struct drm_simple_display_pipe_funcs gdepaper_pipe_funcs = {
 	.enable		= gdepaper_pipe_enable,
 	.disable	= gdepaper_pipe_disable,
 	.update		= gdepaper_pipe_update,
@@ -948,7 +933,6 @@ static int gdepaper_probe(struct spi_device *spi)
 	if (ret)
 		return ret;
 
-	/* FIXME read from dt */
 	epap->spi_speed_hz = 2000000;
 	epap->pll_div = 1;
 	epap->framerate_mHz = 81850;
@@ -976,7 +960,7 @@ static int gdepaper_probe(struct spi_device *spi)
 		return ret;
 	}
 	if (epap->display_colors < 0 ||
-			epap->display_colors >= GDEPAPER_COLORS_END) {
+			epap->display_colors >= GDEPAPER_COL_END) {
 		DRM_DEV_ERROR(dev, "invalid colors value\n");
 		return -EINVAL;
 	}
