@@ -35,6 +35,8 @@
 #include <drm/tinydrm/mipi-dbi.h>
 #include <drm/tinydrm/tinydrm-helpers.h>
 
+#include <uapi/drm/gdepaper_drm.h>
+
 #include <dt-bindings/display/gdepaper.h>
 
 
@@ -104,19 +106,12 @@ enum gdepaper_col_ch {
 };
 
 
-struct gdepaper_luts {
-	u8 lut_vcom_dc[44];
-	u8 lut_ww[42];
-	u8 lut_bw[42];
-	u8 lut_bb[42];
-	u8 lut_wb[42];
-};
-
 struct gdepaper {
 	struct mipi_dbi mipi;
 	struct gpio_desc *busy;
 
 	struct gdepaper_luts *luts;
+	u8 psr; /* Panel setup byte */
 	u32 spi_speed_hz;
 	bool partial_update_en;
 	enum gdepaper_color_type display_colors;
@@ -585,19 +580,19 @@ static void gdepaper_pipe_enable(struct drm_simple_display_pipe *pipe,
 				epap->controller_res);
 		goto err_out;
 	}
-	param = epap->controller_res<<6;
+	epap->psr = epap->controller_res<<6;
 	if (epap->luts)
-		param |= GDEP_PSR_REG_LUT;
+		epap->psr |= GDEP_PSR_REG_LUT;
 	if (epap->display_colors == GDEPAPER_COL_BW)
-		param |= GDEP_PSR_COLOR_BW;
+		epap->psr |= GDEP_PSR_COLOR_BW;
 
 	if (!epap->mirror_x)
-		param |= GDEP_PSR_SH_RIGHT;
+		epap->psr |= GDEP_PSR_SH_RIGHT;
 	if (!epap->mirror_y)
-		param |= GDEP_PSR_SCAN_UP;
-	param |= GDEP_PSR_BOOST_ON | GDEP_PSR_SOFT_RST;
+		epap->psr |= GDEP_PSR_SCAN_UP;
+	epap->psr |= GDEP_PSR_BOOST_ON | GDEP_PSR_SOFT_RST;
 	ret = gdepaper_command(epap, GDEP_CMD_PANEL_SETUP,
-				   &param ,sizeof(param));
+				   &epap->psr ,sizeof(epap->psr));
 	if (ret)
 		goto err_out;
 
@@ -875,6 +870,87 @@ static const struct drm_simple_display_pipe_funcs gdepaper_pipe_funcs = {
 
 DEFINE_DRM_GEM_CMA_FOPS(gdepaper_fops);
 
+int gdepaper_force_full_refresh_ioctl(struct drm_device *drm_dev, void *data,
+		struct drm_file *file) {
+	struct mipi_dbi *mipi = drm_to_mipi_dbi(drm_dev);
+	struct gdepaper *epap = mipi_dbi_to_gdepaper(mipi);
+	int ret;
+	/* FIXME same as below in update luts. locks? */
+
+	if (!drm_dev_enter(fb->dev, &idx))
+		return -EBUSY; /* FIXME is this the correct return code? Should we retry? */
+
+	ret = gdepaper_wait_busy(epap);
+	if (ret)
+		goto out;
+
+	/* FIXME should we lock to sync against update here? */
+	ret = gdepaper_command(epap, GDEP_CMD_DISP_RF, NULL, 0);
+
+out:
+	drm_dev_exit(idx);
+	return ret;
+}
+
+int gdepaper_load_luts_imm_ioctl(struct drm_device *drm_dev, void *data,
+		struct drm_file *file) {
+	struct mipi_dbi *mipi = drm_to_mipi_dbi(drm_dev);
+	struct gdepaper *epap = mipi_dbi_to_gdepaper(mipi);
+	struct gdepaper_luts *req = data;
+	int ret, idx;
+
+	epap->luts = kzalloc(sizeof(*epap->luts), GFP_KERNEL);
+	if (!epap->luts)
+		return -ENOMEM;
+
+	if (copy_from_user(epap->luts, req, sizeof(epap->luts))) {
+		ret = -EFAULT;
+		goto err_free;
+	}
+
+	if (!drm_dev_enter(fb->dev, &idx)) {
+		ret = -EBUSY; /* FIXME is this the correct return code? Should we retry? */
+		goto err_free;
+	}
+
+	ret = gdepaper_wait_busy(epap);
+	if (ret)
+		goto err_free;
+
+	/* FIXME should we lock to sync against update here? */
+	ret = gdepaper_update_luts(epap);
+	if (ret)
+		goto err_free;
+
+	epap->psr &= ~GDEP_PSR_REG_LUT;
+	ret = gdepaper_command(epap, GDEP_CMD_PANEL_SETUP,
+				   &epap->psr ,sizeof(epap->psr));
+
+	drm_dev_exit(idx);
+	return ret;
+err_free:
+	drm_dev_exit(idx);
+	kfree(epap->luts);
+	return ret;
+}
+
+int gdepaper_set_partial_update_en_ioctl(struct drm_device *drm_dev,
+		void *data, struct drm_file *file) {
+	struct mipi_dbi *mipi = drm_to_mipi_dbi(drm_dev);
+	struct gdepaper *epap = mipi_dbi_to_gdepaper(mipi);
+	u32 *param = data;
+	epap->partial_update_en = *param;
+}
+
+static const struct drm_ioctl_desc gdepaper_ioctls[] = {
+	DRM_IOCTL_DEF_DRV(GDEPAPER_FORCE_FULL_REFRESH,
+			gdepaper_force_full_refresh_ioctl, DRM_AUTH),
+	DRM_IOCTL_DEF_DRV(GDEPAPER_LOAD_LUTS_IMM,
+			gdepaper_load_luts_imm_ioctl, DRM_AUTH),
+	DRM_IOCTL_DEF_DRV(GDEPAPER_SET_PARTIAL_UPDATE_EN,
+			gdepaper_set_partial_update_en_ioctl, DRM_AUTH),
+};
+
 static struct drm_driver gdepaper_driver = {
 	.driver_features	= DRIVER_GEM | DRIVER_MODESET | DRIVER_PRIME |
 				  DRIVER_ATOMIC,
@@ -886,6 +962,8 @@ static struct drm_driver gdepaper_driver = {
 	.date			= "20190715",
 	.major			= 1,
 	.minor			= 0,
+	.ioctls			= gdepaper_ioctls,
+	.num_ioctls		= ARRAY_SIZE(gdepaper_ioctls),
 };
 
 static const struct spi_device_id gdepaper_id[] = {
