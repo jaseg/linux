@@ -38,6 +38,10 @@
 #include <dt-bindings/display/gdepaper.h>
 
 
+#include "gdepaper_models.h"
+
+MODULE_DEVICE_TABLE(of, gdepaper_of_match);
+
 
 enum gdepaper_cmd {
 	GDEP_CMD_PANEL_SETUP = 0x00,
@@ -820,31 +824,46 @@ static int gdepaper_of_read_luts(struct gdepaper *epap, struct device_node *np,
 	return -EINVAL;
 }
 
-static struct drm_display_mode *gdepaper_of_read_mode(struct device_node *np, struct device *dev) {
+static struct drm_display_mode *gdepaper_of_read_mode(
+	const struct gdepaper_type_descriptor *type,
+	struct device_node *np,
+	struct device *dev)
+{
 	u32 dims[4];
-	int ret;
+	int ret1, ret2;
 	struct drm_display_mode *mode =
 		kzalloc(sizeof(struct drm_display_mode), GFP_KERNEL);
 	if (!mode)
 		return ERR_PTR(-ENOMEM);
 
-	ret = of_property_read_u32_array(np, "dimensions-px", &dims[0], 2);
-	if (ret)
-		goto errout;
+	ret1 = of_property_read_u32_array(np, "dimensions-px", &dims[0], 2);
+	ret2 = of_property_read_u32_array(np, "dimensions-mm", &dims[2], 2);
 
-	ret = of_property_read_u32_array(np, "dimensions-mm", &dims[2], 2);
-	if (ret)
-		goto errout;
+	if (!ret1 && !ret2) {
+		*mode = (struct drm_display_mode){
+			DRM_SIMPLE_MODE(dims[0], dims[1], dims[2], dims[3]),
+		};
 
-	*mode = (struct drm_display_mode){
-		DRM_SIMPLE_MODE(dims[0], dims[1], dims[2], dims[3]),
-	};
+	} else if (ret1 == -EINVAL && ret2 == -EINVAL) {
+		if (type) {
+			*mode = (struct drm_display_mode){
+				DRM_SIMPLE_MODE(type->w_px, type->h_px,
+						type->w_mm, type->h_mm)
+			};
+
+		} else {
+			DRM_DEV_ERROR(dev, "dimensions must be given\n");
+			kfree(mode);
+			return ERR_PTR(-EINVAL);
+		}
+
+	} else {
+		DRM_DEV_ERROR(dev, "invalid dimensions: %d/%d\n", ret1, ret2);
+		kfree(mode);
+		return ERR_PTR(ret1 || ret2);
+	}
 
 	return mode;
-errout:
-	DRM_DEV_ERROR(dev, "missing/invalid dimensions-mm: %d\n", ret);
-	kfree(mode);
-	return ERR_PTR(ret);
 }
 
 static const struct drm_simple_display_pipe_funcs gdepaper_pipe_funcs = {
@@ -858,22 +877,16 @@ DEFINE_DRM_GEM_CMA_FOPS(gdepaper_fops);
 
 static struct drm_driver gdepaper_driver = {
 	.driver_features	= DRIVER_GEM | DRIVER_MODESET | DRIVER_PRIME |
-		DRIVER_ATOMIC,
+				  DRIVER_ATOMIC,
 	.fops			= &gdepaper_fops,
 	.release		= mipi_dbi_release,
 	DRM_GEM_CMA_VMAP_DRIVER_OPS,
 	.name			= "gdepaper",
-	.desc			= "Good Display ePaper display",
+	.desc			= "Good Display ePaper panel",
 	.date			= "20190715",
 	.major			= 1,
 	.minor			= 0,
 };
-
-static const struct of_device_id gdepaper_of_match[] = {
-	{ .compatible = "gddsp,wfi0190cz22" }, /* 2.7 inch white/black/red */
-	{},
-};
-MODULE_DEVICE_TABLE(of, gdepaper_of_match);
 
 static const struct spi_device_id gdepaper_id[] = {
 	{ "wfi0190cz22", 0 },
@@ -889,12 +902,19 @@ static int gdepaper_probe(struct spi_device *spi)
 {
 	struct device *dev = &spi->dev;
 	struct device_node *np = dev->of_node;
+	const struct of_device_id *of_id;
 	struct drm_device *drm;
 	struct drm_display_mode *mode;
 	struct mipi_dbi *mipi;
 	struct gdepaper *epap;
 	struct gpio_desc *dc;
+	const struct gdepaper_type_descriptor *type_desc;
 	int ret;
+
+	of_id = of_match_node(gdepaper_of_match, np);
+	if (WARN_ON(of_id == NULL))
+		return -EINVAL;
+	type_desc = of_id->data;
 
 	dev_dbg(dev, "Probing gdepaper module\n");
 	epap = kzalloc(sizeof(*epap), GFP_KERNEL);
@@ -956,8 +976,13 @@ static int gdepaper_probe(struct spi_device *spi)
 	epap->partial_update_en = of_property_read_bool(np, "partial-update");
 	ret = of_property_read_u32(np, "colors", &epap->display_colors);
 	if (ret) {
-		DRM_DEV_ERROR(dev, "colors must be set\n");
-		return ret;
+		if (type_desc) {
+			epap->display_colors = type_desc->colors;
+
+		} else {
+			DRM_DEV_ERROR(dev, "colors must be set in dt\n");
+			return ret;
+		}
 	}
 	if (epap->display_colors < 0 ||
 			epap->display_colors >= GDEPAPER_COL_END) {
@@ -998,7 +1023,7 @@ static int gdepaper_probe(struct spi_device *spi)
 	/* Overwrite read commands with empty list */
 	mipi->read_commands = gdepaper_dcs_read_commands;
 
-	mode = gdepaper_of_read_mode(np, dev);
+	mode = gdepaper_of_read_mode(type_desc, np, dev);
 	if (IS_ERR(mode))
 		return PTR_ERR(mode);
 
@@ -1052,6 +1077,6 @@ static struct spi_driver gdepaper_spi_driver = {
 };
 module_spi_driver(gdepaper_spi_driver);
 
-MODULE_DESCRIPTION("Good Display ePaper display driver");
+MODULE_DESCRIPTION("Good Display epaper panel driver");
 MODULE_AUTHOR("Jan Sebastian Götte <linux@jaseg.net>");
 MODULE_LICENSE("GPL");
