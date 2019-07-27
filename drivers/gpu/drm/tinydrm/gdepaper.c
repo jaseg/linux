@@ -259,7 +259,7 @@ static int gdepaper_power_on(struct gdepaper *epap)
 
 	ret = gdepaper_wait_busy(epap);
 	if (ret)
-		DRM_DEV_ERROR(dev, "Timeout on power on cmd\n");
+		dev_err(dev, "Timeout on power on cmd\n");
 
 	epap->is_powered_on = true;
 	return ret;
@@ -506,7 +506,7 @@ static void gdepaper_fb_dirty(struct drm_framebuffer *fb, struct drm_rect *rect)
 	}
 
 	if (gdepaper_wait_busy(epap)) {
-		DRM_DEV_ERROR(dev, "Timeout on partial refresh cmd\n");
+		dev_err(dev, "Timeout on partial refresh cmd\n");
 		goto err_out;
 	}
 
@@ -521,7 +521,7 @@ err_out:
 	/* Try to power off anyway */
 	gdepaper_power_off(epap);
 
-	DRM_DEV_ERROR(fb->dev->dev, "Failed to update display %d\n", ret);
+	dev_err(fb->dev->dev, "Failed to update display %d\n", ret);
 	drm_dev_exit(idx);
 }
 
@@ -732,13 +732,13 @@ static void gdepaper_pipe_enable(struct drm_simple_display_pipe *pipe,
 	/* We need to make sure to power off the display to avoid damage */
 	ret = gdepaper_power_off(epap);
 	if (ret)
-		DRM_DEV_ERROR(dev, "Can't power off display, %d\n", ret);
+		dev_err(dev, "Can't power off display, %d\n", ret);
 
 	drm_dev_exit(idx);
 	return;
 
 err_out:
-	DRM_DEV_ERROR(dev, "Error on pipe enable; ret=%d, step=%d\n", ret, step);
+	dev_err(dev, "Error on pipe enable; ret=%d, step=%d\n", ret, step);
 	/* Try to turn off anyway */
 	gdepaper_power_off(epap);
 	drm_dev_exit(idx);
@@ -813,7 +813,7 @@ static int gdepaper_of_read_luts(struct gdepaper *epap, struct device_node *np,
 			ret[3] == -EINVAL && ret[4] == -EINVAL)
 		return 0;
 
-	DRM_DEV_ERROR(dev, "couldn't parse some LUTs - using to OTP LUTs: "
+	dev_err(dev, "couldn't parse some LUTs - using to OTP LUTs: "
 			"vcom_dc=%d ww=%d wb=%d bw=%d bb=%d\n",
 			ret[0], ret[1], ret[2], ret[3], ret[4]);
 	return -EINVAL;
@@ -847,13 +847,13 @@ static struct drm_display_mode *gdepaper_of_read_mode(
 			};
 
 		} else {
-			DRM_DEV_ERROR(dev, "dimensions must be given\n");
+			dev_err(dev, "dimensions must be given\n");
 			kfree(mode);
 			return ERR_PTR(-EINVAL);
 		}
 
 	} else {
-		DRM_DEV_ERROR(dev, "invalid dimensions: %d/%d\n", ret1, ret2);
+		dev_err(dev, "invalid dimensions: %d/%d\n", ret1, ret2);
 		kfree(mode);
 		return ERR_PTR(ret1 || ret2);
 	}
@@ -1011,19 +1011,19 @@ static int gdepaper_probe(struct spi_device *spi)
 
 	mipi->reset = devm_gpiod_get(dev, "reset", GPIOD_OUT_HIGH);
 	if (IS_ERR(mipi->reset)) {
-		DRM_DEV_ERROR(dev, "Failed to get reset GPIO\n");
+		dev_err(dev, "Failed to get reset GPIO\n");
 		return PTR_ERR(mipi->reset);
 	}
 
 	epap->busy = devm_gpiod_get(dev, "busy", GPIOD_IN);
 	if (IS_ERR(epap->busy)) {
-		DRM_DEV_ERROR(dev, "Failed to get busy GPIO\n");
+		dev_err(dev, "Failed to get busy GPIO\n");
 		return PTR_ERR(epap->busy);
 	}
 
 	dc = devm_gpiod_get(dev, "dc", GPIOD_OUT_LOW);
 	if (IS_ERR(dc)) {
-		DRM_DEV_ERROR(dev, "Failed to get dc GPIO\n");
+		dev_err(dev, "Failed to get dc GPIO\n");
 		return PTR_ERR(dc);
 	}
 
@@ -1058,13 +1058,13 @@ static int gdepaper_probe(struct spi_device *spi)
 			epap->display_colors = type_desc->colors;
 
 		} else {
-			DRM_DEV_ERROR(dev, "colors must be set in dt\n");
+			dev_err(dev, "colors must be set in dt\n");
 			return ret;
 		}
 	}
 	if (epap->display_colors < 0 ||
 			epap->display_colors >= GDEPAPER_COL_END) {
-		DRM_DEV_ERROR(dev, "invalid colors value\n");
+		dev_err(dev, "invalid colors value\n");
 		return -EINVAL;
 	}
 	epap->mirror_x = of_property_read_bool(np, "mirror-x");
@@ -1083,7 +1083,7 @@ static int gdepaper_probe(struct spi_device *spi)
 	ret = of_property_read_u8_array(np, "boost-soft-start",
 			(u8*)&epap->ss_param, sizeof(epap->ss_param));
 	if (ret != -EINVAL)
-		DRM_DEV_ERROR(dev, "invalid boost-soft-start value, "
+		dev_err(dev, "invalid boost-soft-start value, "
 				   "ignoring\n");
 	of_property_read_u32(np, "vcom-data-interval-periods",
 			&epap->vcom_data_ivl_hsync);
