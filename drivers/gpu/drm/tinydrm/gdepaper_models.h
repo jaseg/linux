@@ -7,6 +7,18 @@
  * This data was manually extracted from the displays' specifications pages on
  * the mfg website.
  *
+ * The following displays use third-party driver chips with command sets this
+ * driver can't handle:
+ *   GDEH0154D67
+ *   GDEH0213B73
+ *   GDE060B3
+ *   GDE060F3
+ *   GDE060BA, GDE060BAT, GDE060BAFL GDE060BAFLT
+ *
+ * To add a display, insert the appropriate descriptor line below, then link it
+ * into the table at the bottom of this file. This driver should handle any
+ * Good Display driver chip (IL*, GD*) with minor modifications.
+ *
  * Copyright 2019 Jan Sebastian Goette
  */
 
@@ -42,9 +54,12 @@ DEF_EPD_TYPE(gdew0583z21,     GDEPAPER_COL_BW_RED,    119,  88,  600, 448); /*  
 DEF_EPD_TYPE(gdew075z08,      GDEPAPER_COL_BW_RED,    163,  98,  800, 480); /*    7.5"     b/w/r  GD7965      */
 DEF_EPD_TYPE(gdew075z09,      GDEPAPER_COL_BW_RED,    163,  98,  640, 384); /*    7.5"     b/w/r  IL0371      */
 DEF_EPD_TYPE(gdew075c21,      GDEPAPER_COL_BW_YELLOW, 163,  98,  640, 384); /*    7.5"     b/w/y  IL0371      */
+#if 0
+/* These are not yet supported since they use multiple driver chips in cascade mode */
 DEF_EPD_TYPE(gdew1248z95,     GDEPAPER_COL_BW_RED,    253, 191, 1304, 984); /*   12.48"    b/w/r  IL0326 (4x) */
 DEF_EPD_TYPE(gdew1248c63,     GDEPAPER_COL_BW_YELLOW, 253, 191, 1304, 984); /*   12.48"    b/w/y  IL0326 (4x) */
 DEF_EPD_TYPE(gdew1248t3,      GDEPAPER_COL_BW,        253, 191, 1304, 984); /*   12.48"    b/w    IL0326 (4x) */
+#endif
 DEF_EPD_TYPE(gdew0102i4f,     GDEPAPER_COL_BW,         22,  14,  128,  80); /*    1.02"    b/w    IL0323      */
 DEF_EPD_TYPE(gdew0102i4fc,    GDEPAPER_COL_BW,         22,  14,  128,  80); /*    1.02"    b/w                */
 DEF_EPD_TYPE(gdep014tt1,      GDEPAPER_COL_BW,         14,  33,  128, 296); /*    1.43"    b/w                */
@@ -52,7 +67,6 @@ DEF_EPD_TYPE(gdep015oc1,      GDEPAPER_COL_BW,         28,  28,  200, 200); /*  
 DEF_EPD_TYPE(gdew0154t8t,     GDEPAPER_COL_BW,         28,  28,  152, 152); /*    1.54"    b/w    IL0373      */
 DEF_EPD_TYPE(gdew0154t8fl,    GDEPAPER_COL_BW,         28,  28,  152, 152); /*    1.54"    b/w    IL0373      */
 DEF_EPD_TYPE(gdew0154t8,      GDEPAPER_COL_BW,         28,  28,  152, 152); /*    1.54"    b/w    IL0373      */
-DEF_EPD_TYPE(gdeh0154d67,     GDEPAPER_COL_BW,         27,  27,  200, 200); /*    1.54"    b/w    SSD1681     */
 DEF_EPD_TYPE(gdeh0154d27t,    GDEPAPER_COL_BW,         28,  28,  200, 200); /*    1.54"    b/w                */
 DEF_EPD_TYPE(gdem0154e97lt,   GDEPAPER_COL_BW,         28,  28,  152, 152); /*    1.54"    b/w    IL3895      */
 DEF_EPD_TYPE(gdew0154i9f,     GDEPAPER_COL_BW,         28,  28,  152, 152); /*    1.54"    b/w                */
@@ -60,7 +74,6 @@ DEF_EPD_TYPE(gdew0213t5,      GDEPAPER_COL_BW,         24,  49,  212, 104); /*  
 DEF_EPD_TYPE(gdew0213i5f,     GDEPAPER_COL_BW,         49,  24,  212, 104); /*    2.13"    b/w                */
 DEF_EPD_TYPE(gdeh0213d30lt,   GDEPAPER_COL_BW,         23,  48,  212, 104); /*    2.13"    b/w    IL3820      */
 DEF_EPD_TYPE(gdew0213v7lt,    GDEPAPER_COL_BW,         24,  49,  212, 104); /*    2.13"    b/w    IL0373      */
-DEF_EPD_TYPE(gdeh0213b73,     GDEPAPER_COL_BW,         24,  49,  250, 122); /*    2.13"    b/w    SSD1675B    */
 DEF_EPD_TYPE(gdth0213zhft34,  GDEPAPER_COL_BW,         24,  49,  250, 122); /*    2.13"    b/w                */
 DEF_EPD_TYPE(gdew026t0,       GDEPAPER_COL_BW,         60,  31,  296, 152); /*    2.6"     b/w    IL0373      */
 DEF_EPD_TYPE(gdew027w3t,      GDEPAPER_COL_BW,         57,  38,  264, 176); /*    2.7"     b/w    IL91874     */
@@ -75,12 +88,6 @@ DEF_EPD_TYPE(gdep043zf3,      GDEPAPER_COL_BW,         56,  94,  800, 480); /*  
 DEF_EPD_TYPE(gde043a2t,       GDEPAPER_COL_BW,         88,  66,  800, 600); /*    4.3"     b/w                */
 DEF_EPD_TYPE(gde043a2,        GDEPAPER_COL_BW,         88,  66,  800, 600); /*    4.3"     b/w                */
 DEF_EPD_TYPE(gdew0583t7,      GDEPAPER_COL_BW,        119,  88,  600, 448); /*    5.83"    b/w    IL0371      */
-DEF_EPD_TYPE(gde060b3,        GDEPAPER_COL_BW,        122,  91,  800, 600); /*    6"       b/w    HX8705-B    */
-DEF_EPD_TYPE(gde060bat,       GDEPAPER_COL_BW,        122,  91,  800, 600); /*    6"       b/w    HX8705-B    */
-DEF_EPD_TYPE(gde060bafl,      GDEPAPER_COL_BW,        122,  91,  800, 600); /*    6"       b/w    HX8705-B    */
-DEF_EPD_TYPE(gde060baflt,     GDEPAPER_COL_BW,        122,  91,  800, 600); /*    6"       b/w    HX8705-B    */
-DEF_EPD_TYPE(gde060ba,        GDEPAPER_COL_BW,        122,  91,  800, 600); /*    6"       b/w    HX8705-B    */
-DEF_EPD_TYPE(gde060f3,        GDEPAPER_COL_BW,         91, 122, 1024, 758); /*    6"       b/w    HX8705-B    */
 DEF_EPD_TYPE(gdew075t8,       GDEPAPER_COL_BW,        163,  98,  640, 384); /*    7.5"     b/w    IL0371      */
 DEF_EPD_TYPE(gdew075t7,       GDEPAPER_COL_BW,        163,  98,  800, 480); /*    7.5"     b/w    GD7965      */
 DEF_EPD_TYPE(gdew080t5,       GDEPAPER_COL_BW,        122, 163, 1024, 768); /*    8"       b/w                */
@@ -115,9 +122,12 @@ static const struct of_device_id gdepaper_of_match[] = {
 	EPD_TYPE_ENTRY(gdew075z08),
 	EPD_TYPE_ENTRY(gdew075z09),
 	EPD_TYPE_ENTRY(gdew075c21),
+#if 0
+	/* see comment above. */
 	EPD_TYPE_ENTRY(gdew1248z95),
 	EPD_TYPE_ENTRY(gdew1248c63),
 	EPD_TYPE_ENTRY(gdew1248t3),
+#endif
 	EPD_TYPE_ENTRY(gdew0102i4f),
 	EPD_TYPE_ENTRY(gdew0102i4fc),
 	EPD_TYPE_ENTRY(gdep014tt1),
@@ -125,7 +135,6 @@ static const struct of_device_id gdepaper_of_match[] = {
 	EPD_TYPE_ENTRY(gdew0154t8t),
 	EPD_TYPE_ENTRY(gdew0154t8fl),
 	EPD_TYPE_ENTRY(gdew0154t8),
-	EPD_TYPE_ENTRY(gdeh0154d67),
 	EPD_TYPE_ENTRY(gdeh0154d27t),
 	EPD_TYPE_ENTRY(gdem0154e97lt),
 	EPD_TYPE_ENTRY(gdew0154i9f),
@@ -133,7 +142,6 @@ static const struct of_device_id gdepaper_of_match[] = {
 	EPD_TYPE_ENTRY(gdew0213i5f),
 	EPD_TYPE_ENTRY(gdeh0213d30lt),
 	EPD_TYPE_ENTRY(gdew0213v7lt),
-	EPD_TYPE_ENTRY(gdeh0213b73),
 	EPD_TYPE_ENTRY(gdth0213zhft34),
 	EPD_TYPE_ENTRY(gdew026t0),
 	EPD_TYPE_ENTRY(gdew027w3t),
@@ -148,12 +156,6 @@ static const struct of_device_id gdepaper_of_match[] = {
 	EPD_TYPE_ENTRY(gde043a2t),
 	EPD_TYPE_ENTRY(gde043a2),
 	EPD_TYPE_ENTRY(gdew0583t7),
-	EPD_TYPE_ENTRY(gde060b3),
-	EPD_TYPE_ENTRY(gde060bat),
-	EPD_TYPE_ENTRY(gde060bafl),
-	EPD_TYPE_ENTRY(gde060baflt),
-	EPD_TYPE_ENTRY(gde060ba),
-	EPD_TYPE_ENTRY(gde060f3),
 	EPD_TYPE_ENTRY(gdew075t8),
 	EPD_TYPE_ENTRY(gdew075t7),
 	EPD_TYPE_ENTRY(gdew080t5),
