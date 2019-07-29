@@ -22,12 +22,6 @@
  * Copyright 2019 Jan Sebastian Goette
  */
 
-struct gdepaper_type_descriptor {
-	enum gdepaper_color_type colors;
-	int w_mm, h_mm;
-	int w_px, h_px;
-};
-
 #define DEF_EPD_TYPE(type, col, w_mm, h_mm, w_px, h_px) \
 	static const struct gdepaper_type_descriptor gddsp_ ## type ## _data = \
 	{col, w_mm, h_mm, w_px, h_px}
@@ -95,72 +89,73 @@ DEF_EPD_TYPE(gdep097tc2,      GDEPAPER_COL_BW,        203, 139, 1200, 825); /*  
 
 #undef DEF_EPD_TYPE
 
-#define EPD_TYPE_ENTRY(type) \
+#define EPD_OF_ENTRY(type) \
 	{ .compatible = "gddsp," #type ,  .data = &gddsp_ ## type ## _data }
 
 static const struct of_device_id gdepaper_of_match[] = {
 	{ .compatible = "gddsp,generic_epaper",	.data = NULL },
-	EPD_TYPE_ENTRY(gdew0154z04t),
-	EPD_TYPE_ENTRY(gdew0154z04fl),
-	EPD_TYPE_ENTRY(gdew0154z04),
-	EPD_TYPE_ENTRY(gdewl0154z17fl),
-	EPD_TYPE_ENTRY(gdew0154z17),
-	EPD_TYPE_ENTRY(gdew0154c39fl),
-	EPD_TYPE_ENTRY(gdew0154c39),
-	EPD_TYPE_ENTRY(gdew0213z16),
-	EPD_TYPE_ENTRY(gdew0213c38),
-	EPD_TYPE_ENTRY(gdew026z39),
-	EPD_TYPE_ENTRY(gdew027c44t),
-	EPD_TYPE_ENTRY(gdew027c44),
-	EPD_TYPE_ENTRY(gdew029z10),
-	EPD_TYPE_ENTRY(gdew029c32),
-	EPD_TYPE_ENTRY(gdew0371z80),
-	EPD_TYPE_ENTRY(gdew042z15),
-	EPD_TYPE_ENTRY(gdew042c37),
-	EPD_TYPE_ENTRY(gdew0583c64),
-	EPD_TYPE_ENTRY(gdew0583z21),
-	EPD_TYPE_ENTRY(gdew075z08),
-	EPD_TYPE_ENTRY(gdew075z09),
-	EPD_TYPE_ENTRY(gdew075c21),
+	EPD_OF_ENTRY(gdew0154z04t),
+	EPD_OF_ENTRY(gdew0154z04fl),
+	EPD_OF_ENTRY(gdew0154z04),
+	EPD_OF_ENTRY(gdewl0154z17fl),
+	EPD_OF_ENTRY(gdew0154z17),
+	EPD_OF_ENTRY(gdew0154c39fl),
+	EPD_OF_ENTRY(gdew0154c39),
+	EPD_OF_ENTRY(gdew0213z16),
+	EPD_OF_ENTRY(gdew0213c38),
+	EPD_OF_ENTRY(gdew026z39),
+	EPD_OF_ENTRY(gdew027c44t),
+	EPD_OF_ENTRY(gdew027c44),
+	EPD_OF_ENTRY(gdew029z10),
+	EPD_OF_ENTRY(gdew029c32),
+	EPD_OF_ENTRY(gdew0371z80),
+	EPD_OF_ENTRY(gdew042z15),
+	EPD_OF_ENTRY(gdew042c37),
+	EPD_OF_ENTRY(gdew0583c64),
+	EPD_OF_ENTRY(gdew0583z21),
+	EPD_OF_ENTRY(gdew075z08),
+	EPD_OF_ENTRY(gdew075z09),
+	EPD_OF_ENTRY(gdew075c21),
 #if 0
 	/* see comment above. */
-	EPD_TYPE_ENTRY(gdew1248z95),
-	EPD_TYPE_ENTRY(gdew1248c63),
-	EPD_TYPE_ENTRY(gdew1248t3),
+	EPD_OF_ENTRY(gdew1248z95),
+	EPD_OF_ENTRY(gdew1248c63),
+	EPD_OF_ENTRY(gdew1248t3),
 #endif
-	EPD_TYPE_ENTRY(gdew0102i4f),
-	EPD_TYPE_ENTRY(gdew0102i4fc),
-	EPD_TYPE_ENTRY(gdep014tt1),
-	EPD_TYPE_ENTRY(gdep015oc1),
-	EPD_TYPE_ENTRY(gdew0154t8t),
-	EPD_TYPE_ENTRY(gdew0154t8fl),
-	EPD_TYPE_ENTRY(gdew0154t8),
-	EPD_TYPE_ENTRY(gdeh0154d27t),
-	EPD_TYPE_ENTRY(gdem0154e97lt),
-	EPD_TYPE_ENTRY(gdew0154i9f),
-	EPD_TYPE_ENTRY(gdew0213t5),
-	EPD_TYPE_ENTRY(gdew0213i5f),
-	EPD_TYPE_ENTRY(gdeh0213d30lt),
-	EPD_TYPE_ENTRY(gdew0213v7lt),
-	EPD_TYPE_ENTRY(gdth0213zhft34),
-	EPD_TYPE_ENTRY(gdew026t0),
-	EPD_TYPE_ENTRY(gdew027w3t),
-	EPD_TYPE_ENTRY(gdew027w3),
-	EPD_TYPE_ENTRY(gdeh029a1),
-	EPD_TYPE_ENTRY(gdew029t5),
-	EPD_TYPE_ENTRY(gdeh029d56lt),
-	EPD_TYPE_ENTRY(gdew029i6f),
-	EPD_TYPE_ENTRY(gdew0371w7),
-	EPD_TYPE_ENTRY(gdew042t2),
-	EPD_TYPE_ENTRY(gdep043zf3),
-	EPD_TYPE_ENTRY(gde043a2t),
-	EPD_TYPE_ENTRY(gde043a2),
-	EPD_TYPE_ENTRY(gdew0583t7),
-	EPD_TYPE_ENTRY(gdew075t8),
-	EPD_TYPE_ENTRY(gdew075t7),
-	EPD_TYPE_ENTRY(gdew080t5),
-	EPD_TYPE_ENTRY(gdep097tc2),
-	{},
+	EPD_OF_ENTRY(gdew0102i4f),
+	EPD_OF_ENTRY(gdew0102i4fc),
+	EPD_OF_ENTRY(gdep014tt1),
+	EPD_OF_ENTRY(gdep015oc1),
+	EPD_OF_ENTRY(gdew0154t8t),
+	EPD_OF_ENTRY(gdew0154t8fl),
+	EPD_OF_ENTRY(gdew0154t8),
+	EPD_OF_ENTRY(gdeh0154d27t),
+	EPD_OF_ENTRY(gdem0154e97lt),
+	EPD_OF_ENTRY(gdew0154i9f),
+	EPD_OF_ENTRY(gdew0213t5),
+	EPD_OF_ENTRY(gdew0213i5f),
+	EPD_OF_ENTRY(gdeh0213d30lt),
+	EPD_OF_ENTRY(gdew0213v7lt),
+	EPD_OF_ENTRY(gdth0213zhft34),
+	EPD_OF_ENTRY(gdew026t0),
+	EPD_OF_ENTRY(gdew027w3t),
+	EPD_OF_ENTRY(gdew027w3),
+	EPD_OF_ENTRY(gdeh029a1),
+	EPD_OF_ENTRY(gdew029t5),
+	EPD_OF_ENTRY(gdeh029d56lt),
+	EPD_OF_ENTRY(gdew029i6f),
+	EPD_OF_ENTRY(gdew0371w7),
+	EPD_OF_ENTRY(gdew042t2),
+	EPD_OF_ENTRY(gdep043zf3),
+	EPD_OF_ENTRY(gde043a2t),
+	EPD_OF_ENTRY(gde043a2),
+	EPD_OF_ENTRY(gdew0583t7),
+	EPD_OF_ENTRY(gdew075t8),
+	EPD_OF_ENTRY(gdew075t7),
+	EPD_OF_ENTRY(gdew080t5),
+	EPD_OF_ENTRY(gdep097tc2),
+	{}
 };
 
-#undef EPD_TYPE_ENTRY
+#undef EPD_OF_ENTRY
+
